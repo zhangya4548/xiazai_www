@@ -1,0 +1,7 @@
+/vendor
+/.idea
+.env
+.vagrant
+Vagrantfile
+bootstrap.sh
+report

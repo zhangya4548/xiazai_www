@@ -1,0 +1,17 @@
+{
+    "name": "xiazai_www",
+    "description": "扒站",
+    "keywords": ["下载", "扒站"],
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "7.0.*",
+        "php-curl-class/php-curl-class": "^8.1",
+        "monolog/monolog": "^1.23"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lib\\": "lib/"
+        }
+    }
+}
