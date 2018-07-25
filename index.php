@@ -9,19 +9,26 @@ require __DIR__ . '/vendor/autoload.php';
 
 $api = new \Lib\ApiService();
 
-$param_arr = getopt('w:');
-if(true === empty($param_arr['w'])){
-    die('参数错误,示例: php index.php -w http://www.baidu.com');
+$param_arr = getopt('w:n:');
+if (true === empty($param_arr['w']))
+{
+    die('参数错误,示例: php index.php -w http://www.baidu.com -n index.html');
 }
 
-$name = 'index.html';
+
+if (true === empty($param_arr['n']))
+{
+    die('参数错误,示例: php index.php -w http://www.baidu.com -n index.html');
+}
+
+$name    = $param_arr['n'];
 $url     = $param_arr['w'];
 $wwwInfo = parse_url($url);
-$scheme = $wwwInfo['scheme'].'://';
+$scheme  = $wwwInfo['scheme'] . '://';
 
 //创建默认文件夹
 $host      = $wwwInfo['host'];
-$indexName = $host . '/'.$name;
+$indexName = $host . '/' . $name;
 $cssDir    = $host . '/css';
 $jsDir     = $host . '/js';
 $imagesDir = $host . '/images';
@@ -55,39 +62,38 @@ if ((int)$res['statusCode'] !== 200)
 $html = $res['raw'];
 
 //生成页面
-file_put_contents($indexName,$html);
+file_put_contents($indexName, $html);
 
 //获取本地页面
 $html = file_get_contents($indexName);
 
 //生成css
-$html = createCss($cssDir, $imagesDir,$api, $headers, $html,$scheme,$host);
+$html = createCss($cssDir, $imagesDir, $api, $headers, $html, $scheme, $host);
 
 //取出所有href连接
 preg_match_all('#src="(.*?)"#is', $html, $result);
 $srcArr = $result[1] ?? [];
 
 //生成js
-$html = createJs($srcArr, $jsDir, $api, $headers, $html,$scheme,$host);
+$html = createJs($srcArr, $jsDir, $api, $headers, $html, $scheme, $host);
 
 
 //生成img
-$html = createImg($srcArr, $imagesDir, $api, $headers, $html,$scheme,$host);
+$html = createImg($srcArr, $imagesDir, $api, $headers, $html, $scheme, $host);
 
-file_put_contents($indexName,$html);
+file_put_contents($indexName, $html);
 
 die('下载完成');
 
 
-
 //生成img
-function createImg($srcArr, $imagesDir, $api, $headers, $html,$scheme,$host)
+function createImg($srcArr, $imagesDir, $api, $headers, $html, $scheme, $host)
 {
     if (false === empty($srcArr))
     {
         foreach ($srcArr as $k => $v)
         {
-            if (!substr_count($v, '.gif') && !substr_count($v, '.jpg') && !substr_count($v, '.jpeg') &&  !substr_count($v, '.png'))
+            if (!substr_count($v, '.gif') && !substr_count($v, '.jpg') && !substr_count($v, '.jpeg') && !substr_count($v, '.png'))
             {
                 continue;
             }
@@ -96,7 +102,12 @@ function createImg($srcArr, $imagesDir, $api, $headers, $html,$scheme,$host)
             $pPash = $v;
 
 
-            if(!substr_count($v, $scheme)){
+            if(substr($v,0,2) === '//'){
+                $v = 'http:' . $v;
+            }
+
+            if (!substr_count($v, $scheme))
+            {
                 $v = $scheme . $host . $v;
             }
 
@@ -118,7 +129,7 @@ function createImg($srcArr, $imagesDir, $api, $headers, $html,$scheme,$host)
             $imgInfo = $api->request('get', $v, $headers);
             if ((int)$imgInfo['statusCode'] !== 200)
             {
-                die('获取' . $pPash . '异常'. $v);
+                die('获取' . $pPash . '异常' . $v);
             }
             file_put_contents($imgPash, $imgInfo['raw']);
 
@@ -131,7 +142,7 @@ function createImg($srcArr, $imagesDir, $api, $headers, $html,$scheme,$host)
 }
 
 //生成js
-function createJs($srcArr, $jsDir, $api, $headers, $html,$scheme,$host)
+function createJs($srcArr, $jsDir, $api, $headers, $html, $scheme, $host)
 {
     if (false === empty($srcArr))
     {
@@ -153,11 +164,17 @@ function createJs($srcArr, $jsDir, $api, $headers, $html,$scheme,$host)
                 $v   = $tmp[0];
             }
 
-
-            if(!substr_count($v, $scheme)){
-                $v = $scheme . $host . $v;
+            if(substr($v,0,2) === '//'){
+                $v = 'http:' . $v;
+            }else{
+                if (!substr_count($v, $scheme))
+                {
+                    $v = $scheme . $host . $v;
+                }
             }
-            
+
+
+
 
             //js文件名
             $jsName = basename($v);
@@ -169,7 +186,7 @@ function createJs($srcArr, $jsDir, $api, $headers, $html,$scheme,$host)
             $jsInfo = $api->request('get', $v, $headers);
             if ((int)$jsInfo['statusCode'] !== 200)
             {
-                die('获取' . $pPash . '异常'. $v);
+                die('获取' . $pPash . '异常' . $v);
             }
             file_put_contents($jsPash, $jsInfo['raw']);
 
@@ -182,12 +199,12 @@ function createJs($srcArr, $jsDir, $api, $headers, $html,$scheme,$host)
 }
 
 //生成css
-function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
+function createCss($cssDir, $imagesDir, $api, $headers, $html, $scheme, $host)
 {
     //取出所有href连接
     preg_match_all('#href="(.*?)"#is', $html, $result);
     $cssArr = $result[1] ?? [];
-    
+
     if (false === empty($cssArr))
     {
         foreach ($cssArr as $k => $v)
@@ -209,8 +226,13 @@ function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
             }
 
 
-            if(!substr_count($v, $scheme)){
-                $v = $scheme . $host . $v;
+            if(substr($v,0,2) === '//'){
+                $v = 'http:' . $v;
+            }else{
+                if (!substr_count($v, $scheme))
+                {
+                    $v = $scheme . $host . $v;
+                }
             }
 
             //css文件名
@@ -223,19 +245,21 @@ function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
             $cssInfo = $api->request('get', $v, $headers);
             if ((int)$cssInfo['statusCode'] !== 200)
             {
-                die('获取' . $cssName . '异常'. $v);
+                die('获取' . $cssName . '异常' . $v);
             }
 
             //取出所有图片连接
             preg_match_all('#url\((.*?)\)#is', $cssInfo['raw'], $resultB);
-            if($resultB[1]){
-                $tmpB = '';
-                $tmpC = '';
-                $tmpD = '';
-                $imgPash = '';
-                $imgInfo = '';
+            if ($resultB[1])
+            {
+                $tmpB      = '';
+                $tmpC      = '';
+                $tmpD      = '';
+                $imgPash   = '';
+                $imgInfo   = '';
                 $reImgPash = '';
-                foreach($resultB[1] as $kk => $vv) {
+                foreach ($resultB[1] as $kk => $vv)
+                {
                     $tmpB = $vv;
 
                     $tmpD = basename($vv);
@@ -243,8 +267,9 @@ function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
                     $imgPash = $imagesDir . '/' . $tmpD;
 
 
-                    if(!substr_count($vv, $scheme)){
-                        $vv = $scheme . $host .'/'. $vv;
+                    if (!substr_count($vv, $scheme))
+                    {
+                        $vv = $scheme . $host . '/' . $vv;
                     }
 
                     //生成文件
@@ -255,8 +280,8 @@ function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
                         file_put_contents($imgPash, $imgInfo['raw']);
 
                         //替换css路径
-                        $reImgPash = '../images/' . $tmpD;
-                        $cssInfo['raw']  = str_replace($tmpB, $reImgPash, $cssInfo['raw']);
+                        $reImgPash      = '../images/' . $tmpD;
+                        $cssInfo['raw'] = str_replace($tmpB, $reImgPash, $cssInfo['raw']);
                     }
                 }
 
@@ -276,7 +301,6 @@ function createCss($cssDir,$imagesDir, $api, $headers, $html,$scheme,$host)
     }
     return $html;
 }
-
 
 
 //新建文件夹
